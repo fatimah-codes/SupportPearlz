@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+
+# Environment Variables & Secrets
+.env
+*.env
+.env.*
+!.env.example
+
+# Vector Database (Persisted index must not be committed)
+data/vector_store/
+*.chroma/
+*.faiss
+*.pkl
+
+# Log files
+*.log
+supportpearlz.log
+
+# Streamlit local state
+.streamlit/secrets.toml
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Evaluation temp outputs
+evaluation/results/*.tmp

@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Facet — Designed in Glass</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #050507;
+      color: #fff;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    #canvas-container {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 1;
+    }
+    #dom-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .clickable {
+      pointer-events: auto;
+      cursor: pointer;
+    }
+    /* Smoked glass modal overlay for Streamlit / API key integration */
+    .glass-badge {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      z-index: 20;
+      background: rgba(23, 23, 27, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      padding: 8px 18px;
+      font-size: 13px;
+      color: #dcdce0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      letter-spacing: 0.02em;
+    }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #36d67e;
+      box-shadow: 0 0 8px #36d67e;
+    }
+  </style>
+
+  <!-- Three.js 0.169.0 Import Map -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <div class="glass-badge">
+    <div class="status-dot"></div>
+    <span>SupportPearlz Active &bull; Real-time Material Engine</span>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+    // Scene & Dimensions
+    const container = document.getElementById('canvas-container');
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x050507);
+
+    // Perspective Camera: fov 30°, placed so 1 world unit = 1 CSS px at z = 0
+    const camera = new THREE.PerspectiveCamera(30, width / height, 0.1, 8000);
+    const cameraDistance = (height / 2) / Math.tan(THREE.MathUtils.degToRad(15));
+    camera.position.set(0, 0, cameraDistance);
+    camera.lookAt(0, 0, 0);
+
+    // Renderer: ACES Filmic Tone Mapping, DPR capped at 2
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(width, height);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    container.appendChild(renderer.domElement);
+
+    // Environment: PMREM RoomEnvironment, environmentIntensity .42
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    pmremGenerator.compileEquirectangularShader();
+    const roomEnv = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = roomEnv;
+
+    // Soft white-blue key light from top-left
+    const keyLight = new THREE.DirectionalLight(0xdbeafe, 1.4);
+    keyLight.position.set(-600, 800, 1000);
+    scene.add(keyLight);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+    scene.add(ambientLight);
+
+    // Root Group with global tilt
+    const rootGroup = new THREE.Group();
+    scene.add(rootGroup);
+
+    // Dimensions & Scale S
+    let blockWidth = width * (1 - 0.11);
+    let blockHeight = height * (1 - 0.17);
+    let S = blockWidth / 1730;
+
+    // Glass Material with custom lavender cursor glow
+    const glassMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0x17171b,
+      roughness: 0.36,
+      clearcoat: 0.7,
+      clearcoatRoughness: 0.12,
+      specularIntensity: 0.7,
+      iridescence: 0.55,
+      iridescenceIOR: 1.3,
+      iridescenceThicknessRange: [250, 650],
+      envMapIntensity: 1.0
+    });
+
+    const pointerWorld = new THREE.Vector3(0, 0, 0);
+    const pointerUniform = { value: pointerWorld };
+    const pointerIntensity = { value: 0.0 };
+
+    glassMaterial.onBeforeCompile = (shader) => {
+      shader.uniforms.uPointerWorld = pointerUniform;
+      shader.uniforms.uPointerIntensity = pointerIntensity;
+      shader.uniforms.uScale = { value: S };
+
+      shader.vertexShader = 'varying vec3 vWorldPosition;\n' + shader.vertexShader;
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <worldpos_vertex>',
+        `#include <worldpos_vertex>
+         vWorldPosition = (modelMatrix * vec4(transformed, 1.0)).xyz;`
+      );
+
+      shader.fragmentShader = 'uniform vec3 uPointerWorld;\nuniform float uPointerIntensity;\nuniform float uScale;\nvarying vec3 vWorldPosition;\n' + shader.fragmentShader;
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <dithering_fragment>',
+        `#include <dithering_fragment>
+         float dist = length(vWorldPosition.xy - uPointerWorld.xy);
+         float glowRadius = 300.0 * max(uScale, 0.4);
+         float glow = exp(-1.6 * pow(dist / glowRadius, 2.0)) * 0.16 * uPointerIntensity;
+         gl_FragColor.rgb += vec3(0.42, 0.37, 0.62) * glow;`
+      );
+    };
+
+    // Build the 2D canvas texture for content printed on glass
+    function createPageCanvasTexture() {
+      const cvs = document.createElement('canvas');
+      const dpr = 2.0;
+      cvs.width = Math.max(1024, Math.floor(blockWidth * dpr));
+      cvs.height = Math.max(768, Math.floor(blockHeight * dpr));
+      const ctx = cvs.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      const w = blockWidth;
+      const h = blockHeight;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Nav content
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `600 ${15 * S}px Inter, sans-serif`;
+      ctx.fillText('FACET', 30 * S, 40 * S);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.font = `400 ${13 * S}px Inter, sans-serif`;
+      ctx.fillText('Studio   Materials   Pricing', 140 * S, 40 * S);
+      ctx.fillText('Sign in', w - 90 * S, 40 * S);
+
+      // Shard Panel Content
+      const panelTop = h * 0.108 + 14;
+      ctx.fillStyle = 'rgba(255,255,255,0.38)';
+      ctx.font = `500 ${11 * S}px Inter, sans-serif`;
+      ctx.fillText('REAL-TIME MATERIAL STUDIO', 60 * S, panelTop + h * 0.135);
+
+      // Headline gradient
+      const headSize = Math.min(w * 0.078, h * 0.20);
+      const grad = ctx.createLinearGradient(0, panelTop + h * 0.18, 0, panelTop + h * 0.42);
+      grad.addColorStop(0, '#dcdce0');
+      grad.addColorStop(1, '#bdbdc3');
+      ctx.fillStyle = grad;
+      ctx.font = `500 ${headSize}px Inter, sans-serif`;
+      ctx.fillText('Designed', 60 * S, panelTop + h * 0.28);
+      ctx.fillText('in glass.', 60 * S, panelTop + h * 0.28 + headSize * 0.97);
+
+      // Subheading
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.font = `400 ${16 * S}px Inter, sans-serif`;
+      ctx.fillText('Author dispersion, transmission, and refraction in the browser. Live', 60 * S, panelTop + h * 0.52);
+      ctx.fillText('previews, real materials.', 60 * S, panelTop + h * 0.52 + 24 * S);
+
+      // Pill: Open Studio
+      ctx.fillStyle = '#ffffff';
+      const pillW = 126 * S, pillH = 40 * S;
+      const pillX = 60 * S, pillY = panelTop + h * 0.62;
+      ctx.beginPath();
+      ctx.roundRect(pillX, pillY, pillW, pillH, 6 * S);
+      ctx.fill();
+
+      ctx.fillStyle = '#050507';
+      ctx.font = `600 ${13 * S}px Inter, sans-serif`;
+      ctx.fillText('Open studio', pillX + 22 * S, pillY + 25 * S);
+
+      // Read paper link
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `500 ${14 * S}px Inter, sans-serif`;
+      ctx.fillText('Read paper \u2192', pillX + pillW + 36 * S, pillY + 25 * S);
+
+      // Footers
+      ctx.fillStyle = 'rgba(255,255,255,0.34)';
+      ctx.font = `400 ${11 * S}px Inter, sans-serif`;
+      ctx.fillText('\u00A9 Facet Lab', 60 * S, h - 30 * S);
+      ctx.fillText('KHR_materials_dispersion', w - 210 * S, h - 30 * S);
+
+      const texture = new THREE.CanvasTexture(cvs);
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      return texture;
+    }
+
+    const pageTexture = createPageCanvasTexture();
+
+    // Build the Shards with ExtrudeGeometry & Printed Text Surface
+    const shards = [];
+    const shardGroup = new THREE.Group();
+    rootGroup.add(shardGroup);
+
+    // Cells definition (A, B, C, D, E) + Nav Slab
+    const cornerR = 20 * S;
+    const depth = 13 * S;
+    const bevel = 2.6 * S;
+
+    function createRoundedPolygonShape(points) {
+      const shape = new THREE.Shape();
+      for (let i = 0; i < points.length; i++) {
+        const p = points[i];
+        if (i === 0) shape.moveTo(p.x, p.y);
+        else shape.lineTo(p.x, p.y);
+      }
+      shape.closePath();
+      return shape;
+    }
+
+    // Nav slab
+    const navHeight = blockHeight * 0.108;
+    const navShape = new THREE.Shape();
+    navShape.moveTo(-blockWidth / 2, blockHeight / 2);
+    navShape.lineTo(blockWidth / 2, blockHeight / 2);
+    navShape.lineTo(blockWidth / 2, blockHeight / 2 - navHeight);
+    navShape.lineTo(-blockWidth / 2, blockHeight / 2 - navHeight);
+    navShape.closePath();
+
+    const extrudeSettings = {
+      depth: depth,
+      bevelEnabled: true,
+      bevelSegments: 3,
+      steps: 1,
+      bevelSize: bevel,
+      bevelThickness: bevel
+    };
+
+    const navGeom = new THREE.ExtrudeGeometry(navShape, extrudeSettings);
+    const navMesh = new THREE.Mesh(navGeom, glassMaterial);
+    navMesh.position.z = -depth / 2;
+
+    // Nav printed text
+    const navTextGeom = new THREE.ShapeGeometry(navShape);
+    const navPos = navTextGeom.attributes.position;
+    const navUvs = [];
+    for (let j = 0; j < navPos.count; j++) {
+      const u = (navPos.getX(j) + blockWidth / 2) / blockWidth;
+      const v = (navPos.getY(j) + blockHeight / 2) / blockHeight;
+      navUvs.push(u, v);
+    }
+    navTextGeom.setAttribute('uv', new THREE.Float32BufferAttribute(navUvs, 2));
+    const navTextMat = new THREE.MeshBasicMaterial({
+      map: pageTexture,
+      transparent: true,
+      opacity: 0.95,
+      depthWrite: false
+    });
+    const navTextMesh = new THREE.Mesh(navTextGeom, navTextMat);
+    navTextMesh.position.z = depth + 0.5;
+    navMesh.add(navTextMesh);
+
+    shardGroup.add(navMesh);
+    shards.push({ mesh: navMesh, isNav: true, homePos: navMesh.position.clone() });
+
+    // 5 Shard Cells (A, B, C, D, E)
+    const panelYTop = blockHeight / 2 - navHeight - 14;
+    const panelYBot = -blockHeight / 2;
+    const panelH = panelYTop - panelYBot;
+    const panelW = blockWidth;
+
+    const cellDefs = [
+      // Cell A (Hero left)
+      [ {x: -panelW/2, y: panelYTop}, {x: -panelW*0.28, y: panelYTop}, {x: -panelW*0.11, y: panelYBot + panelH*0.28}, {x: -panelW*0.16, y: panelYBot}, {x: -panelW/2, y: panelYBot} ],
+      // Cell B (Center top)
+      [ {x: -panelW*0.28, y: panelYTop}, {x: panelW*0.015, y: panelYTop}, {x: -panelW*0.02, y: panelYBot + panelH*0.38}, {x: -panelW*0.11, y: panelYBot + panelH*0.28} ],
+      // Cell C (Right top)
+      [ {x: panelW*0.015, y: panelYTop}, {x: panelW*0.34, y: panelYTop}, {x: panelW*0.21, y: panelYBot + panelH*0.49}, {x: -panelW*0.02, y: panelYBot + panelH*0.38} ],
+      // Cell D (Bottom center)
+      [ {x: -panelW*0.11, y: panelYBot + panelH*0.28}, {x: -panelW*0.02, y: panelYBot + panelH*0.38}, {x: panelW*0.21, y: panelYBot + panelH*0.49}, {x: panelW*0.36, y: panelYBot}, {x: -panelW*0.16, y: panelYBot} ],
+      // Cell E (Right edge)
+      [ {x: panelW*0.34, y: panelYTop}, {x: panelW/2, y: panelYTop}, {x: panelW/2, y: panelYBot}, {x: panelW*0.36, y: panelYBot}, {x: panelW*0.21, y: panelYBot + panelH*0.49} ]
+    ];
+
+    cellDefs.forEach((pts, i) => {
+      const shp = createRoundedPolygonShape(pts);
+      const geom = new THREE.ExtrudeGeometry(shp, extrudeSettings);
+      const m = new THREE.Mesh(geom, glassMaterial);
+      m.position.z = -depth / 2;
+
+      // Printed text layer on top face of shard
+      const textGeom = new THREE.ShapeGeometry(shp);
+      const pos = textGeom.attributes.position;
+      const uvs = [];
+      for (let j = 0; j < pos.count; j++) {
+        const u = (pos.getX(j) + panelW / 2) / panelW;
+        const v = (pos.getY(j) - panelYBot) / panelH;
+        uvs.push(u, v);
+      }
+      textGeom.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+      const textMat = new THREE.MeshBasicMaterial({
+        map: pageTexture,
+        transparent: true,
+        opacity: 0.95,
+        depthWrite: false
+      });
+      const textMesh = new THREE.Mesh(textGeom, textMat);
+      textMesh.position.z = depth + 0.5;
+      m.add(textMesh);
+
+      shardGroup.add(m);
+      shards.push({ mesh: m, isNav: false, homePos: m.position.clone() });
+    });
+
+    // Interaction state
+    const pointer = { x: 0, y: 0, targetX: 0, targetY: 0 };
+    let shattered = false;
+    let shatterProgress = 0;
+
+    window.addEventListener('mousemove', (e) => {
+      const nx = (e.clientX / width) * 2 - 1;
+      const ny = -(e.clientY / height) * 2 + 1;
+      pointer.targetX = nx;
+      pointer.targetY = ny;
+
+      pointerWorld.x = (e.clientX - width / 2);
+      pointerWorld.y = -(e.clientY - height / 2);
+      pointerIntensity.value = 1.0;
+    });
+
+    window.addEventListener('mouseleave', () => {
+      pointer.targetX = 0;
+      pointer.targetY = 0;
+      pointerIntensity.value = 0.0;
+    });
+
+    // Shatter trigger on click
+    window.addEventListener('click', (e) => {
+      shattered = !shattered;
+    });
+
+    // Animation Loop
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = clock.getDelta();
+      const time = clock.getElapsedTime();
+
+      // Smooth pointer
+      pointer.x += (pointer.targetX - pointer.x) * 0.08;
+      pointer.y += (pointer.targetY - pointer.y) * 0.08;
+
+      // Global tilt
+      if (!shattered) {
+        rootGroup.rotation.y = THREE.MathUtils.degToRad(pointer.x * 7.0 - 1.2);
+        rootGroup.rotation.x = THREE.MathUtils.degToRad(-pointer.y * 5.5 + 0.8);
+      }
+
+      // Shards spring / shatter simulation
+      shards.forEach((s, idx) => {
+        if (shattered) {
+          // Fly off with outward, downward, and tumble velocities
+          s.mesh.position.z += 8.0;
+          s.mesh.position.y -= 3.0;
+          s.mesh.rotation.x += 0.015 * (idx + 1);
+          s.mesh.rotation.y += 0.02 * (idx % 2 === 0 ? 1 : -1);
+        } else {
+          // Restore home positions smoothly
+          s.mesh.position.lerp(s.homePos, 0.1);
+          s.mesh.rotation.x *= 0.9;
+          s.mesh.rotation.y *= 0.9;
+        }
+      });
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    });
+  </script>
+</body>
+</html>

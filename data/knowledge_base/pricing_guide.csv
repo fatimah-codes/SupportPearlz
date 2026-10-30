@@ -1,0 +1,13 @@
+SKU,Product Name,Category,Description,List Price (PKR),Promotional Price (PKR),Availability Status,Warranty Period (Months)
+SKU-FP-01,Sediment Pre-Filter Cartridge (5 Micron),Replacement Filter,"Spun polypropylene sediment filter for particulate matter, sand, and silt reduction. Compatible with AquaPearl 300, 500 Pro, and legacy 200.",1800,1550,In Stock,0
+SKU-AC-03,Activated Carbon Block Filter,Replacement Filter,"Coconut-shell extruded carbon block for chlorine, VOCs, odor, and taste enhancement. Compatible with AquaPearl 300 and 500 Pro.",2200,1950,In Stock,0
+SKU-RO-02,High-Flux RO Membrane Element (75 GPD),Replacement Filter,Thin-film composite (TFC) reverse osmosis membrane for dissolved solids and heavy metal rejection. Compatible with AquaPearl 500 Pro.,4500,3999,In Stock,0
+SKU-MN-04,Post-Carbon Mineralizer & Alkalizer Cartridge,Replacement Filter,Calcite and corosex post-filter enriching purified water with essential calcium and magnesium ions while balancing pH. Fits all AquaPearl units.,1600,1400,In Stock,0
+SKU-AP-H1,AeroPearl True HEPA H13 Filter Replacement,Air Filter,Medical-grade H13 HEPA filter capturing 99.97% of airborne particles down to 0.3 microns. Compatible with AeroPearl Mini.,3200,2850,In Stock,0
+SKU-AP500-01,AquaPearl 500 Pro Smart Water Purifier,Appliance,"Flagship 7-stage RO+UV+UF+TDS smart water purifier with real-time digital TDS monitoring, filter life indicator, and WiFi telemetry.",48000,42500,In Stock,24
+SKU-AP300-01,AquaPearl 300 Under-Sink Purifier,Appliance,Compact 5-stage RO+UV under-sink water purifier with pressurized 8L storage tank and brushed steel faucet.,32000,28900,In Stock,24
+SKU-AERO-01,AeroPearl Mini Smart Air Purifier,Appliance,"Desktop air purifier with H13 True HEPA, activated carbon, and laser particulate sensor covering up to 250 sq ft.",24000,21500,In Stock,24
+SKU-AP200-00,AquaPearl 200 Countertop Purifier,Appliance (Discontinued),Legacy 4-stage countertop gravity and carbon filtration unit. Discontinued in 2024; consumable filters remain fully supported.,22000,18000,Discontinued - Spare Support Only,12
+SKU-ACR-00,AeroPearl Classic Air Purifier,Appliance (Discontinued),Legacy tower air purifier discontinued in 2023. Filter replacements remain stocked until December 2027.,28000,21000,Discontinued - Spare Support Only,12
+SKU-BDL-01,Annual Filter Bundle - AquaPearl 500 Pro,Bundle,"Includes 3x Sediment Pre-filters, 2x Activated Carbon Blocks, 1x Post-Carbon Mineralizer. Saves 25% over individual purchases.",8500,6999,In Stock,0
+SKU-BDL-02,Dual Air Filter Value Pack - AeroPearl Mini,Bundle,Includes 2x AeroPearl True HEPA H13 filter cartridges.,6000,5200,In Stock,0

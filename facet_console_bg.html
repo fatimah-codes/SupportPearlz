@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      background: transparent;
+      overflow: hidden;
+    }
+    canvas { display: block; width: 100%; height: 100%; }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const canvas = document.getElementById('c');
+let W = window.innerWidth, H = window.innerHeight;
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(W, H);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.9;
+renderer.setClearColor(0x000000, 0);
+
+const scene = new THREE.Scene();
+
+// Camera
+const camera = new THREE.PerspectiveCamera(28, W / H, 0.1, 8000);
+const dist = (H / 2) / Math.tan(THREE.MathUtils.degToRad(14));
+camera.position.set(0, 0, dist);
+
+// PMREM Environment
+const pmrem = new THREE.PMREMGenerator(renderer);
+pmrem.compileEquirectangularShader();
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+// Lights
+const key = new THREE.DirectionalLight(0xdbeafe, 1.2);
+key.position.set(-500, 700, 900);
+scene.add(key);
+scene.add(new THREE.AmbientLight(0xffffff, 0.15));
+
+// Glass material — dark charcoal, iridescent, clearcoat
+function makeGlass(opacity = 0.82) {
+  return new THREE.MeshPhysicalMaterial({
+    color: 0x14141a,
+    roughness: 0.30,
+    metalness: 0.0,
+    transmission: 0.35,
+    thickness: 6,
+    clearcoat: 0.85,
+    clearcoatRoughness: 0.08,
+    specularIntensity: 0.8,
+    iridescence: 0.65,
+    iridescenceIOR: 1.35,
+    iridescenceThicknessRange: [200, 700],
+    envMapIntensity: 1.3,
+    transparent: true,
+    opacity: opacity,
+    side: THREE.DoubleSide
+  });
+}
+
+// Build a shattered glass floor of polygonal shards
+const S = W / 1440;  // scale
+
+// Random polygon shard generator (Voronoi-like approximation)
+function randomShardPolygon(cx, cy, r, sides) {
+  const pts = [];
+  const angleStep = (Math.PI * 2) / sides;
+  for (let i = 0; i < sides; i++) {
+    const angle = i * angleStep + (Math.random() - 0.5) * angleStep * 0.55;
+    const radius = r * (0.55 + Math.random() * 0.55);
+    pts.push(new THREE.Vector2(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius));
+  }
+  return pts;
+}
+
+const shardGroup = new THREE.Group();
+scene.add(shardGroup);
+
+const shards = [];
+
+// Place shards in a scattered grid across the scene
+const cols = 9, rows = 6;
+const cellW = W * 1.3 / cols;
+const cellH = H * 1.5 / rows;
+
+for (let r = 0; r < rows; r++) {
+  for (let c = 0; c < cols; c++) {
+    const sides = 3 + Math.floor(Math.random() * 4); // triangle to hexagon
+    const cx = (c - cols / 2 + 0.5) * cellW + (Math.random() - 0.5) * cellW * 0.5;
+    const cy = (r - rows / 2 + 0.5) * cellH + (Math.random() - 0.5) * cellH * 0.5;
+    const radius = (cellW * 0.38 + cellH * 0.32) / 2;
+
+    const pts = randomShardPolygon(cx, cy, radius, sides);
+    const shape = new THREE.Shape(pts);
+
+    const depth = (4 + Math.random() * 10) * S;
+    const bevel = 1.2 * S;
+
+    const geom = new THREE.ExtrudeGeometry(shape, {
+      depth,
+      bevelEnabled: true,
+      bevelSize: bevel,
+      bevelThickness: bevel,
+      bevelSegments: 2,
+      steps: 1
+    });
+
+    const opacity = 0.50 + Math.random() * 0.38;
+    const mat = makeGlass(opacity);
+    const mesh = new THREE.Mesh(geom, mat);
+
+    // Scatter in Z — shards float at different depths
+    const zOffset = -depth / 2 + (Math.random() - 0.5) * 60 * S;
+    mesh.position.set(0, 0, zOffset);
+
+    // Slight random tilt — shattered look
+    mesh.rotation.x = (Math.random() - 0.5) * 0.22;
+    mesh.rotation.y = (Math.random() - 0.5) * 0.22;
+    mesh.rotation.z = (Math.random() - 0.5) * 0.18;
+
+    shardGroup.add(mesh);
+    shards.push({
+      mesh,
+      rotSpeedX: (Math.random() - 0.5) * 0.0008,
+      rotSpeedY: (Math.random() - 0.5) * 0.0008,
+      floatAmp: 4 + Math.random() * 8,
+      floatFreq: 0.15 + Math.random() * 0.35,
+      floatPhase: Math.random() * Math.PI * 2,
+      baseZ: zOffset
+    });
+  }
+}
+
+// Bright hairline crack lines between shards
+const cracksGroup = new THREE.Group();
+scene.add(cracksGroup);
+for (let i = 0; i < 18; i++) {
+  const x1 = (Math.random() - 0.5) * W;
+  const y1 = (Math.random() - 0.5) * H;
+  const len = 80 + Math.random() * 200;
+  const angle = Math.random() * Math.PI;
+  const x2 = x1 + Math.cos(angle) * len;
+  const y2 = y1 + Math.sin(angle) * len;
+
+  const pts = [new THREE.Vector3(x1, y1, 5 * S), new THREE.Vector3(x2, y2, 5 * S)];
+  const crackGeom = new THREE.BufferGeometry().setFromPoints(pts);
+  const crackMat = new THREE.LineBasicMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.10 + Math.random() * 0.12
+  });
+  cracksGroup.add(new THREE.Line(crackGeom, crackMat));
+}
+
+// Mouse tracking for subtle tilt
+const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
+window.addEventListener('mousemove', e => {
+  mouse.tx = (e.clientX / W - 0.5) * 2;
+  mouse.ty = -(e.clientY / H - 0.5) * 2;
+});
+
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+
+  // Smooth mouse
+  mouse.x += (mouse.tx - mouse.x) * 0.04;
+  mouse.y += (mouse.ty - mouse.y) * 0.04;
+
+  // Global subtle tilt from mouse
+  shardGroup.rotation.y = mouse.x * 0.06;
+  shardGroup.rotation.x = mouse.y * 0.04;
+  cracksGroup.rotation.y = mouse.x * 0.05;
+  cracksGroup.rotation.x = mouse.y * 0.035;
+
+  // Individual shard float animation
+  shards.forEach(s => {
+    s.mesh.position.z = s.baseZ + Math.sin(t * s.floatFreq + s.floatPhase) * s.floatAmp;
+    // Very slow spin
+    s.mesh.rotation.x += s.rotSpeedX;
+    s.mesh.rotation.y += s.rotSpeedY;
+  });
+
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', () => {
+  W = window.innerWidth; H = window.innerHeight;
+  camera.aspect = W / H;
+  camera.updateProjectionMatrix();
+  renderer.setSize(W, H);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 850" width="100%" height="100%" style="background:#090a0f; font-family:'Inter',system-ui,-apple-system,sans-serif;">
+  <defs>
+    <linearGradient id="glassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1c1d24" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#111217" stop-opacity="0.95"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#b9abff"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Title Banner -->
+  <rect x="30" y="20" width="1040" height="60" rx="10" fill="url(#glassGrad)" stroke="#27272a" stroke-width="1.5"/>
+  <text x="50" y="56" fill="#ffffff" font-size="20" font-weight="700" letter-spacing="-0.5px">SupportPearlz Architecture</text>
+  <text x="350" y="56" fill="#a1a1aa" font-size="13">AAI-407 Practical Assignment &bull; Retrieval-Augmented Generation Agent</text>
+  <rect x="910" y="37" width="140" height="26" rx="13" fill="rgba(54,214,126,0.12)" stroke="#36d67e" stroke-width="1"/>
+  <circle cx="925" cy="50" r="4" fill="#36d67e"/>
+  <text x="936" y="54" fill="#36d67e" font-size="11" font-weight="600">PRODUCTION READY</text>
+
+  <!-- ================= INGESTION PIPELINE (OFFLINE) ================= -->
+  <rect x="30" y="100" width="1040" height="240" rx="12" fill="url(#glassGrad)" stroke="#3f3f46" stroke-width="1.2"/>
+  <text x="50" y="130" fill="#b9abff" font-size="13" font-weight="700" letter-spacing="1px">INGESTION PIPELINE (OFFLINE &bull; RUN ONCE PER KB REVISION)</text>
+
+  <!-- Step 1: Knowledge Base Documents -->
+  <rect x="50" y="150" width="200" height="160" rx="8" fill="#18181b" stroke="#52525b" stroke-width="1"/>
+  <text x="65" y="180" fill="#f4f4f5" font-size="14" font-weight="600">Knowledge Base Files</text>
+  <text x="65" y="205" fill="#a1a1aa" font-size="11">&bull; product_manual.pdf (12p)</text>
+  <text x="65" y="225" fill="#a1a1aa" font-size="11">&bull; installation_guide.pdf (6p)</text>
+  <text x="65" y="245" fill="#a1a1aa" font-size="11">&bull; service_agreement.docx</text>
+  <text x="65" y="265" fill="#a1a1aa" font-size="11">&bull; pricing_guide.csv (SKUs)</text>
+  <text x="65" y="285" fill="#a1a1aa" font-size="11">&bull; 8x Markdown Policies/FAQs</text>
+
+  <!-- Arrow 1 -->
+  <path d="M 250 230 L 290 230" stroke="#b9abff" stroke-width="2" marker-end="url(#arrow)"/>
+  <polygon points="290,230 282,225 282,235" fill="#b9abff"/>
+
+  <!-- Step 2: Loader Dispatcher -->
+  <rect x="300" y="150" width="190" height="160" rx="8" fill="#18181b" stroke="#52525b" stroke-width="1"/>
+  <text x="315" y="180" fill="#f4f4f5" font-size="14" font-weight="600">Loader Dispatcher</text>
+  <text x="315" y="205" fill="#d4d4d8" font-size="11">&bull; PyPDFLoader (page-level)</text>
+  <text x="315" y="225" fill="#d4d4d8" font-size="11">&bull; Docx2txt (sections)</text>
+  <text x="315" y="245" fill="#d4d4d8" font-size="11">&bull; Tabular CSV Row Parser</text>
+  <text x="315" y="265" fill="#d4d4d8" font-size="11">&bull; Metadata Preservation</text>
+  <text x="315" y="285" fill="#eab308" font-size="10">Corrupt File Skip Logic</text>
+
+  <!-- Arrow 2 -->
+  <polygon points="530,230 522,225 522,235" fill="#b9abff"/>
+  <path d="M 490 230 L 530 230" stroke="#b9abff" stroke-width="2"/>
+
+  <!-- Step 3: Text Splitter -->
+  <rect x="540" y="150" width="190" height="160" rx="8" fill="#18181b" stroke="#52525b" stroke-width="1"/>
+  <text x="555" y="180" fill="#f4f4f5" font-size="14" font-weight="600">Text Splitter</text>
+  <text x="555" y="205" fill="#d4d4d8" font-size="11">&bull; RecursiveCharacterSplitter</text>
+  <text x="555" y="225" fill="#d4d4d8" font-size="11">&bull; Chunk Size: 800 chars</text>
+  <text x="555" y="245" fill="#d4d4d8" font-size="11">&bull; Chunk Overlap: 120 (15%)</text>
+  <text x="555" y="265" fill="#d4d4d8" font-size="11">&bull; 142 Structured Chunks</text>
+  <text x="555" y="285" fill="#a1a1aa" font-size="10">Propagates doc_type &amp; loc</text>
+
+  <!-- Arrow 3 -->
+  <polygon points="770,230 762,225 762,235" fill="#b9abff"/>
+  <path d="M 730 230 L 770 230" stroke="#b9abff" stroke-width="2"/>
+
+  <!-- Step 4: Vector Store Persistence -->
+  <rect x="780" y="150" width="270" height="160" rx="8" fill="#18181b" stroke="#36d67e" stroke-width="1.5"/>
+  <text x="795" y="180" fill="#36d67e" font-size="14" font-weight="600">Chroma Vector DB (Disk)</text>
+  <text x="795" y="205" fill="#d4d4d8" font-size="11">&bull; Path: data/vector_store/</text>
+  <text x="795" y="225" fill="#d4d4d8" font-size="11">&bull; Subword &amp; Hosted Embeddings</text>
+  <text x="795" y="245" fill="#d4d4d8" font-size="11">&bull; Dimension: 384 / 768 / 1536</text>
+  <text x="795" y="265" fill="#d4d4d8" font-size="11">&bull; Load-or-build (0.4s fast load)</text>
+  <text x="795" y="285" fill="#36d67e" font-size="10" font-weight="600">NEVER RE-EMBEDS AT QUERY TIME</text>
+
+  <!-- ================= QUERY PIPELINE (ONLINE) ================= -->
+  <rect x="30" y="360" width="1040" height="460" rx="12" fill="url(#glassGrad)" stroke="#3f3f46" stroke-width="1.2"/>
+  <text x="50" y="390" fill="#38bdf8" font-size="13" font-weight="700" letter-spacing="1px">QUERY PIPELINE (ONLINE &bull; MULTI-TURN INFERENCE PER TURN)</text>
+
+  <!-- Client & Memory -->
+  <rect x="50" y="415" width="210" height="190" rx="8" fill="#18181b" stroke="#52525b" stroke-width="1"/>
+  <text x="65" y="445" fill="#f4f4f5" font-size="14" font-weight="600">User Interface &amp; Memory</text>
+  <text x="65" y="470" fill="#38bdf8" font-size="11">&bull; Streamlit Facet Glass Webapp</text>
+  <text x="65" y="490" fill="#38bdf8" font-size="11">&bull; Interactive Rich CLI REPL</text>
+  <text x="65" y="510" fill="#d4d4d8" font-size="11">&bull; Bounded Window (5 turns)</text>
+  <text x="65" y="530" fill="#d4d4d8" font-size="11">&bull; Session Reset (/reset)</text>
+  <text x="65" y="560" fill="#eab308" font-size="11" font-weight="600">Query Condensation:</text>
+  <text x="65" y="580" fill="#a1a1aa" font-size="10">Pronouns &rarr; Standalone Search</text>
+
+  <!-- Arrow from Memory to Retriever -->
+  <polygon points="300,510 292,505 292,515" fill="#38bdf8"/>
+  <path d="M 260 510 L 300 510" stroke="#38bdf8" stroke-width="2"/>
+
+  <!-- Relevance Gate & Retriever -->
+  <rect x="310" y="415" width="220" height="190" rx="8" fill="#18181b" stroke="#52525b" stroke-width="1"/>
+  <text x="325" y="445" fill="#f4f4f5" font-size="14" font-weight="600">Retriever &amp; Relevance Gate</text>
+  <text x="325" y="470" fill="#d4d4d8" font-size="11">&bull; Cosine Similarity Search (k=4)</text>
+  <text x="325" y="490" fill="#d4d4d8" font-size="11">&bull; Calibrated Threshold: 0.08</text>
+  <text x="325" y="515" fill="#f87171" font-size="11" font-weight="600">Gate Score Check:</text>
+  <text x="325" y="535" fill="#f87171" font-size="10">Score &lt; Threshold &rarr; Refuse Directly</text>
+  <text x="325" y="555" fill="#36d67e" font-size="10">Score &ge; Threshold &rarr; Context Builder</text>
+  <text x="325" y="580" fill="#a1a1aa" font-size="10">Loads persisted index from disk</text>
+
+  <!-- Fast Refusal Branch -->
+  <path d="M 420 605 L 420 660 L 780 660" stroke="#f87171" stroke-width="2" stroke-dasharray="4"/>
+  <polygon points="780,660 772,655 772,665" fill="#f87171"/>
+  <text x="440" y="650" fill="#f87171" font-size="11">Early Refusal (Zero Hallucination)</text>
+
+  <!-- Context Builder & Budget -->
+  <rect x="570" y="415" width="200" height="190" rx="8" fill="#18181b" stroke="#52525b" stroke-width="1"/>
+  <text x="585" y="445" fill="#f4f4f5" font-size="14" font-weight="600">Context Builder</text>
+  <text x="585" y="470" fill="#d4d4d8" font-size="11">&bull; Labeled Blocks [S1]...[Sk]</text>
+  <text x="585" y="490" fill="#d4d4d8" font-size="11">&bull; Attaches source &amp; location</text>
+  <text x="585" y="510" fill="#d4d4d8" font-size="11">&bull; Budget Cap: 6000 chars</text>
+  <text x="585" y="535" fill="#b9abff" font-size="11" font-weight="600">Grounding Prompt V2:</text>
+  <text x="585" y="555" fill="#a1a1aa" font-size="10">&bull; Strict refusal protocol</text>
+  <text x="585" y="575" fill="#a1a1aa" font-size="10">&bull; Injection defense as data</text>
+
+  <!-- Arrow Context to LLM -->
+  <polygon points="800,510 792,505 792,515" fill="#38bdf8"/>
+  <path d="M 770 510 L 800 510" stroke="#38bdf8" stroke-width="2"/>
+
+  <!-- LLM & Structured Output -->
+  <rect x="810" y="415" width="240" height="190" rx="8" fill="#18181b" stroke="#818cf8" stroke-width="1.5"/>
+  <text x="825" y="445" fill="#818cf8" font-size="14" font-weight="600">LLM &amp; Structured Output</text>
+  <text x="825" y="470" fill="#d4d4d8" font-size="11">&bull; Google Gemini / OpenAI</text>
+  <text x="825" y="490" fill="#d4d4d8" font-size="11">&bull; Temperature: 0.0 (explicit)</text>
+  <text x="825" y="510" fill="#d4d4d8" font-size="11">&bull; Pydantic GroundedResponse</text>
+  <text x="825" y="535" fill="#36d67e" font-size="11" font-weight="600">Citation Resolver:</text>
+  <text x="825" y="555" fill="#a1a1aa" font-size="10">&bull; [S1] &rarr; source + page/sec</text>
+  <text x="825" y="575" fill="#a1a1aa" font-size="10">&bull; De-duplicates &amp; validates</text>
+
+  <!-- Final Response Box -->
+  <rect x="50" y="690" width="1000" height="100" rx="8" fill="#13141c" stroke="#36d67e" stroke-width="1.2"/>
+  <text x="70" y="720" fill="#36d67e" font-size="13" font-weight="700">GROUNDED USER RESPONSE</text>
+  <text x="70" y="745" fill="#ffffff" font-size="12">Answer: Grounded text &bull; Sources: [1] warranty_policy.md (&sect;3.2) &bull; Confidence: HIGH &bull; Latency: 12ms</text>
+  <text x="70" y="770" fill="#71717a" font-size="11">Structured Telemetry Logged: session_id, original query, rewritten query, chunk IDs &amp; scores, refusal flag.</text>
+</svg>

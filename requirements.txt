@@ -1,0 +1,36 @@
+# SupportPearlz Pinned Dependencies
+# Python >= 3.10, <= 3.13
+
+# Core LangChain Framework
+langchain==0.3.15
+langchain-core==0.3.31
+langchain-community==0.3.15
+langchain-text-splitters==0.3.5
+langchain-chroma==0.2.0
+langchain-google-genai==4.4.2
+langchain-openai==0.2.14
+
+# Vector Store & Search
+chromadb==0.5.23
+
+# Data Ingestion & Parsers
+pypdf==5.1.0
+python-docx==1.1.2
+fpdf2==2.8.2
+
+# Configuration & Validation
+pydantic==2.10.5
+pydantic-settings==2.15.0
+python-dotenv==1.0.1
+
+# Frontend & UI
+streamlit==1.41.1
+
+# Terminal CLI & Formatting
+rich==13.9.4
+typer==0.27.3
+
+# Evaluation & Numerical
+numpy==2.2.3
+scikit-learn==1.9.1
+pytest==9.2.0
